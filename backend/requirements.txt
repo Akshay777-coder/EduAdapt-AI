@@ -3,4 +3,5 @@ djangorestframework
 django-cors-headers
 python-dotenv
 langchain
-langchain-openai
+langchain-ollama
+openai

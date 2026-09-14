@@ -56,8 +56,24 @@ class QuizSubmitView(APIView):
         answers = data.get('answers', [])
         correct_answers = data.get('correct_answers', [])
         
-        score = sum(1 for a, c in zip(answers, correct_answers) if a == c)
-        total = len(correct_answers)
+        score = 0
+        total = len(correct_answers) if correct_answers else (len(answers) if isinstance(answers, list) else len(answers.keys()))
+        
+        # Robust case-insensitive and whitespace-stripped comparison supporting both lists and dictionaries
+        if isinstance(answers, list) and isinstance(correct_answers, list):
+            for a, c in zip(answers, correct_answers):
+                if str(a).strip().lower() == str(c).strip().lower():
+                    score += 1
+        elif isinstance(answers, dict) and isinstance(correct_answers, list):
+            for i, c in enumerate(correct_answers):
+                user_ans = answers.get(str(i), answers.get(i, ""))
+                if str(user_ans).strip().lower() == str(c).strip().lower():
+                    score += 1
+        else:
+            for a, c in zip(answers, correct_answers):
+                if str(a).strip().lower() == str(c).strip().lower():
+                    score += 1
+
         percentage = (score / total) * 100 if total > 0 else 0
         
         QuizAttempt.objects.create(

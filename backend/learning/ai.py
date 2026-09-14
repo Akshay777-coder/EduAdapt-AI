@@ -1,14 +1,13 @@
 import os
 import json
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from .prompts import STUDY_PLAN_PROMPT, TUTOR_PROMPT, QUIZ_PROMPT, RECOMMENDATION_PROMPT
 
 def get_llm():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY is not configured.")
-    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-    return ChatOpenAI(model=model, temperature=0.7, api_key=api_key)
+    # Get model name from environment or default to llama3.2
+    model_name = os.getenv("OLLAMA_MODEL", "llama3.2")
+    # Ollama runs locally on port 11434 by default, no API key needed!
+    return ChatOllama(model=model_name, temperature=0.7)
 
 def generate_study_plan(subject, level, daily_hours, exam_date):
     llm = get_llm()
@@ -32,6 +31,7 @@ def generate_quiz(subject, topic, level):
     chain = QUIZ_PROMPT | llm
     res = chain.invoke({"subject": subject, "topic": topic, "level": level})
     raw = res.content.strip()
+    # Clean markdown code blocks if the local model wraps them
     if raw.startswith("```json"):
         raw = raw[7:]
     if raw.startswith("```"):
